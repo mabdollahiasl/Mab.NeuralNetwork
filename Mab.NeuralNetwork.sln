@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "Mab.NeuralNetwork", "Mab.NeuralNetwork\Mab.NeuralNetwork.vbproj", "{6313EA2C-B445-431A-AD5D-4D15BBB16CD6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{AADAF546-F4CE-47CE-BB16-C9FB54E0BA52}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{778DAE3C-4631-46EA-AA77-85C1314464D9}") = "Mab.NeuralNetwork.Test", "Mab.NeuralNetwork.Test\Mab.NeuralNetwork.Test.vbproj", "{CECD3783-366C-4678-8588-B8949C9D431D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6313EA2C-B445-431A-AD5D-4D15BBB16CD6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6313EA2C-B445-431A-AD5D-4D15BBB16CD6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6313EA2C-B445-431A-AD5D-4D15BBB16CD6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6313EA2C-B445-431A-AD5D-4D15BBB16CD6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CECD3783-366C-4678-8588-B8949C9D431D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CECD3783-366C-4678-8588-B8949C9D431D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CECD3783-366C-4678-8588-B8949C9D431D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CECD3783-366C-4678-8588-B8949C9D431D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5B11EC37-2AD2-4C34-A14A-7CB98034B81F}
+	EndGlobalSection
+EndGlobal
