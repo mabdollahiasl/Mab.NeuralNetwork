@@ -39,17 +39,61 @@
         _Population = New List(Of Chromosome)
     End Sub
 
-    Protected Sub BitFilipMutation(Selected As Chromosome)
+    Protected Sub BitFilipMutation(Selected As Chromosome, GeneCount As Integer)
+        If Not (MinGeneValue = 0 AndAlso MaxGeneValue = 1) Then
+            Throw New Exception("Mutation method not supported!")
+        End If
+        For i = 0 To GeneCount - 1
+            Dim GeneIndex = _RandomGen.Next(ChromosomeLength)
+            If Selected.Genes(GeneIndex) = 0 Then
+                Selected.Genes(GeneIndex) = 1
+            Else
+                Selected.Genes(GeneIndex) = 0
+            End If
+        Next
+    End Sub
+    Protected Sub InversionMutation(Selected As Chromosome, RangeLength As Integer)
+        Dim MaxGeneIndex As Integer = ChromosomeLength - RangeLength
+        Dim StartIndex As Integer = _RandomGen.Next(0, MaxGeneIndex)
+
+        Dim GeneRange(RangeLength - 1) As Double
+        Array.Copy(Selected.Genes, StartIndex, GeneRange, 0, RangeLength)
+        Array.Reverse(GeneRange)
+
+        Array.Copy(GeneRange, 0, Selected.Genes, StartIndex, RangeLength)
+
 
     End Sub
-    Protected Sub InversionMutation(Selected As Chromosome)
-    End Sub
-    Protected Sub RandomResettingMutation(Selected As Chromosome)
+    Protected Sub RandomResettingMutation(Selected As Chromosome, GeneCount As Integer)
+        For i = 0 To GeneCount - 1
+            Dim GeneIndex = _RandomGen.Next(ChromosomeLength)
+            Selected.Genes(GeneIndex) = _RandomGen.Next(MinGeneValue, MaxGeneValue)
+        Next
     End Sub
 
-    Protected Sub ScrambleMutation(Selected As Chromosome)
+    Protected Sub ScrambleMutation(Selected As Chromosome, RangeLength As Integer)
+        Dim MaxGeneIndex As Integer = ChromosomeLength - RangeLength
+        Dim StartIndex As Integer = _RandomGen.Next(0, MaxGeneIndex)
+        Dim EndIndex As Integer = StartIndex + RangeLength
+
+        For i = 0 To RangeLength - 1 'scramble the range
+            Dim FirstGeneIndex = _RandomGen.Next(StartIndex, EndIndex + 1)
+            Dim SecoundGeneIndex = _RandomGen.Next(StartIndex, EndIndex + 1)
+
+            Dim Temp = Selected.Genes(FirstGeneIndex)
+            Selected.Genes(FirstGeneIndex) = Selected.Genes(SecoundGeneIndex)
+            Selected.Genes(SecoundGeneIndex) = Temp
+        Next
     End Sub
-    Protected Sub SwapMutation(Selected As Chromosome)
+    Protected Sub SwapMutation(Selected As Chromosome, GeneCount As Integer)
+        For i = 0 To GeneCount - 1 'scramble the range
+            Dim FirstGeneIndex = _RandomGen.Next(ChromosomeLength)
+            Dim SecoundGeneIndex = _RandomGen.Next(ChromosomeLength)
+
+            Dim Temp = Selected.Genes(FirstGeneIndex)
+            Selected.Genes(FirstGeneIndex) = Selected.Genes(SecoundGeneIndex)
+            Selected.Genes(SecoundGeneIndex) = Temp
+        Next
     End Sub
     Protected Overridable Sub GenerateFirstPopulation()
 
