@@ -1,5 +1,5 @@
 ﻿Public Class Chromosome
-    Public ReadOnly Property Genes As Double()
+    Public ReadOnly Property Genes As Integer()
 
     Public Property Fitness As Double
     Public Sub New(Length As Integer)

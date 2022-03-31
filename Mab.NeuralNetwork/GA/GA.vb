@@ -16,8 +16,10 @@
     Public Property MaxGenration As Integer
 
     Public ReadOnly Property ChromosomeLength As Integer
-    Public ReadOnly Property MinGeneValue As Double
-    Public ReadOnly Property MaxGeneValue As Double
+    Public ReadOnly Property MinGeneValue As Integer
+    Public ReadOnly Property MaxGeneValue As Integer
+
+    Public Property FitnessFunction As Func(Of Chromosome, Double)
 
 
     Private _Population As List(Of Chromosome)
@@ -30,7 +32,7 @@
         End Set
     End Property
 
-    Public Sub New(ChromosomeLength As Integer, MinGeneValue As Double, MaxGeneValue As Double)
+    Public Sub New(ChromosomeLength As Integer, MinGeneValue As Integer, MaxGeneValue As Integer)
         Me.ChromosomeLength = ChromosomeLength
         Me.MinGeneValue = MinGeneValue
         Me.MaxGeneValue = MaxGeneValue
@@ -64,6 +66,14 @@
 
 
     End Sub
+    Protected Overridable Sub UpdateFittness()
+        If FitnessFunction = Nothing Then
+            Throw New ArgumentNullException("fittness function not defind!")
+        End If
+        For Each chromosome In Population
+            chromosome.Fitness = FitnessFunction.Invoke(chromosome)
+        Next
+    End Sub
     Protected Sub RandomResettingMutation(Selected As Chromosome, GeneCount As Integer)
         For i = 0 To GeneCount - 1
             Dim GeneIndex = _RandomGen.Next(ChromosomeLength)
@@ -96,16 +106,23 @@
         Next
     End Sub
     Protected Overridable Sub GenerateFirstPopulation()
-
-        Console.WriteLine("First population produced....")
+        Population = New List(Of Chromosome)
+        For i = 0 To PopulationCount - 1
+            Population.Add(GenerateRandomChromosome())
+        Next
     End Sub
+    Protected Overridable Function GenerateRandomChromosome() As Chromosome
+        Dim rndChromosome As New Chromosome(Me.ChromosomeLength)
+        For i = 0 To ChromosomeLength - 1
+            rndChromosome.Genes(i) = _RandomGen.Next(MinGeneValue, MaxGeneValue)
+        Next
+        Return rndChromosome
+    End Function
     Protected Function GenerateUniqeRandomArrayOfIntegers(Count As Integer) As Integer()
         Dim numbers As New HashSet(Of Integer)
         Do Until numbers.Count = Count
             Dim Current As Integer = _RandomGen.Next(Count)
-            If Not numbers.Contains(Current) Then
-                numbers.Add(Current)
-            End If
+            numbers.Add(Current)
         Loop
         Return numbers.ToArray()
     End Function
@@ -121,8 +138,6 @@
             Dim male = Population(l)
             Population.AddRange(CrossOver(female, male))
         Next
-
-
     End Sub
     Protected Function SinglePointCrossOver(Father As Chromosome, Mother As Chromosome) As Chromosome()
         Dim Male As New Chromosome(ChromosomeLength)
