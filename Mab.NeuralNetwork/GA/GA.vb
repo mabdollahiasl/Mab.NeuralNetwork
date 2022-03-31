@@ -1,9 +1,9 @@
 ﻿Public Class GA
-
+    Public Const DefaultMutationRate As Double = 0.05
+    Private Const DefaultPopulationCount As Integer = 100
     Private ReadOnly _RandomGen As Random
 
 
-    Private _Bests As List(Of Chromosome)
 
 
     Public Property PopulationCount As Integer = 100
@@ -12,6 +12,7 @@
 
     Public Property CrossOverMethod As CrossOverMethods
     Public Property MutationMethod As MutationMethods
+    Public Property MutationRangeLength As Integer
 
     Public Property MaxGenration As Integer
 
@@ -20,6 +21,11 @@
     Public ReadOnly Property MaxGeneValue As Integer
 
     Public Property FitnessFunction As Func(Of Chromosome, Double)
+    Public Property EndFunction As Func(Of Chromosome, Integer, Boolean)
+
+    Public Event GenerationProduced As EventHandler
+
+    Public Property FittnessGoal As Double
 
 
     Private _Population As List(Of Chromosome)
@@ -32,6 +38,13 @@
         End Set
     End Property
 
+    Private _BestGenerations As List(Of Chromosome)
+    Public ReadOnly Property BestGenerations As IReadOnlyCollection(Of Chromosome)
+        Get
+            Return _BestGenerations
+        End Get
+    End Property
+
     Public Sub New(ChromosomeLength As Integer, MinGeneValue As Integer, MaxGeneValue As Integer)
         Me.ChromosomeLength = ChromosomeLength
         Me.MinGeneValue = MinGeneValue
@@ -39,10 +52,25 @@
 
         _RandomGen = New Random()
         _Population = New List(Of Chromosome)
+        _BestGenerations = New List(Of Chromosome)
+        Init()
     End Sub
-
+    Protected Overridable Sub Init()
+        MutationRate = DefaultMutationRate
+        MutationMethod = MutationMethods.Scramble
+        If IsBitGene() Then
+            MutationMethod += MutationMethods.BitFlip
+            MutationMethod += MutationMethods.RandomResetting
+        End If
+        PopulationCount = DefaultPopulationCount
+        MutationRangeLength = 2 * (ChromosomeLength / 10)
+        CrossOverMethod = CrossOverMethods.SinglePoint
+    End Sub
+    Private Function IsBitGene() As Boolean
+        Return (MinGeneValue = 0 AndAlso MaxGeneValue = 1)
+    End Function
     Protected Sub BitFilipMutation(Selected As Chromosome, GeneCount As Integer)
-        If Not (MinGeneValue = 0 AndAlso MaxGeneValue = 1) Then
+        If Not IsBitGene() Then
             Throw New Exception("Mutation method not supported!")
         End If
         For i = 0 To GeneCount - 1
@@ -66,14 +94,7 @@
 
 
     End Sub
-    Protected Overridable Sub UpdateFittness()
-        If FitnessFunction = Nothing Then
-            Throw New ArgumentNullException("fittness function not defind!")
-        End If
-        For Each chromosome In Population
-            chromosome.Fitness = FitnessFunction.Invoke(chromosome)
-        Next
-    End Sub
+
     Protected Sub RandomResettingMutation(Selected As Chromosome, GeneCount As Integer)
         For i = 0 To GeneCount - 1
             Dim GeneIndex = _RandomGen.Next(ChromosomeLength)
@@ -96,13 +117,21 @@
         Next
     End Sub
     Protected Sub SwapMutation(Selected As Chromosome, GeneCount As Integer)
-        For i = 0 To GeneCount - 1 'scramble the range
+        For i = 0 To GeneCount - 1 'swap the range
             Dim FirstGeneIndex = _RandomGen.Next(ChromosomeLength)
             Dim SecoundGeneIndex = _RandomGen.Next(ChromosomeLength)
 
             Dim Temp = Selected.Genes(FirstGeneIndex)
             Selected.Genes(FirstGeneIndex) = Selected.Genes(SecoundGeneIndex)
             Selected.Genes(SecoundGeneIndex) = Temp
+        Next
+    End Sub
+    Protected Overridable Sub UpdateFittness()
+        If FitnessFunction = Nothing Then
+            Throw New ArgumentNullException("fittness function not defind!")
+        End If
+        For Each chromosome In Population
+            chromosome.Fitness = FitnessFunction(chromosome)
         Next
     End Sub
     Protected Overridable Sub GenerateFirstPopulation()
@@ -119,14 +148,17 @@
         Return rndChromosome
     End Function
     Protected Function GenerateUniqeRandomArrayOfIntegers(Count As Integer) As Integer()
+        Return GenerateUniqeRandomArrayOfIntegers(Count, Count)
+    End Function
+    Protected Function GenerateUniqeRandomArrayOfIntegers(Count As Integer, Max As Integer) As Integer()
         Dim numbers As New HashSet(Of Integer)
         Do Until numbers.Count = Count
-            Dim Current As Integer = _RandomGen.Next(Count)
+            Dim Current As Integer = _RandomGen.Next(Max)
             numbers.Add(Current)
         Loop
         Return numbers.ToArray()
     End Function
-    Protected Sub CrossOver()
+    Protected Sub DoCrossOver()
         Dim NewGenration As New List(Of Chromosome)
 
         Dim RandomChromosomesIndex = GenerateUniqeRandomArrayOfIntegers(PopulationCount)
@@ -136,8 +168,26 @@
             Dim l = RandomChromosomesIndex(i + 1)
             Dim female = Population(f)
             Dim male = Population(l)
-            Population.AddRange(CrossOver(female, male))
+            Population.AddRange(DoCrossOver(female, male))
         Next
+    End Sub
+    Public Sub Start()
+        If EndFunction = Nothing Then
+            Throw New ArgumentNullException("end function not defind!")
+        End If
+        Dim RepeatCount = 0
+        Population = New List(Of Chromosome)()
+        GenerateFirstPopulation()
+
+        Do
+            DoCrossOver()
+            DoMutation()
+            UpdateFittness()
+            Population = Population.OrderBy(Function(ch) ch.Fitness).Take(PopulationCount).ToList()
+            _BestGenerations.Add(Population.First())
+            RepeatCount += 1
+            RaiseEvent GenerationProduced(Me, Nothing)
+        Loop Until EndFunction(Population.First(), RepeatCount)
     End Sub
     Protected Function SinglePointCrossOver(Father As Chromosome, Mother As Chromosome) As Chromosome()
         Dim Male As New Chromosome(ChromosomeLength)
@@ -199,7 +249,7 @@
         Return New Chromosome() {Male, FeMale}
     End Function
 
-    Protected Function CrossOver(ch1 As Chromosome, ch2 As Chromosome) As Chromosome()
+    Protected Function DoCrossOver(ch1 As Chromosome, ch2 As Chromosome) As Chromosome()
         Select Case Me.CrossOverMethod
             Case CrossOverMethods.SinglePoint
                 Return SinglePointCrossOver(ch1, ch2)
@@ -211,6 +261,28 @@
                 Return SinglePointCrossOver(ch1, ch2)
         End Select
     End Function
+    Protected Sub DoMutation()
+        Dim MutationCount As Integer = Population.Count * MutationRate
+        Dim MutationIndex = GenerateUniqeRandomArrayOfIntegers(MutationCount, PopulationCount)
+        For Each index In MutationIndex
+            Dim SelectedChromosome = Population(index)
+            If MutationMethod.HasFlag(MutationMethods.BitFlip) Then
+                BitFilipMutation(SelectedChromosome, MutationRangeLength)
+            End If
+            If MutationMethod.HasFlag(MutationMethods.Inversion) Then
+                InversionMutation(SelectedChromosome, MutationRangeLength)
+            End If
+            If MutationMethod.HasFlag(MutationMethods.RandomResetting) Then
+                RandomResettingMutation(SelectedChromosome, MutationRangeLength)
+            End If
+            If MutationMethod.HasFlag(MutationMethods.Scramble) Then
+                ScrambleMutation(SelectedChromosome, MutationRangeLength)
+            End If
+            If MutationMethod.HasFlag(MutationMethods.Swap) Then
+                SwapMutation(SelectedChromosome, MutationRangeLength)
+            End If
+        Next
+    End Sub
     Protected Sub MakeGenarationPool()
         Population = Population.OrderBy(Function(p) p.Fitness).ToList()
         If Population.Count = PopulationCount Then

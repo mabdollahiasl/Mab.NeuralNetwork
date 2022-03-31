@@ -1,13 +1,13 @@
 ﻿
 Public Enum CrossOverMethods
-    SinglePoint
-    TwoPoint
-    Uniform
+    SinglePoint = 1
+    TwoPoint = 2
+    Uniform = 4
 End Enum
 Public Enum MutationMethods
-    BitFlip
-    RandomResetting
-    Swap
-    Scramble
-    Inversion
+    BitFlip = 1
+    RandomResetting = 2
+    Swap = 4
+    Scramble = 8
+    Inversion = 16
 End Enum
