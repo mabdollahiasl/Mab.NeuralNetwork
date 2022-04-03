@@ -268,17 +268,13 @@
             Dim SelectedChromosome = Population(index)
             If MutationMethod.HasFlag(MutationMethods.BitFlip) Then
                 BitFilipMutation(SelectedChromosome, MutationRangeLength)
-            End If
-            If MutationMethod.HasFlag(MutationMethods.Inversion) Then
+            ElseIf MutationMethod.HasFlag(MutationMethods.Inversion) Then
                 InversionMutation(SelectedChromosome, MutationRangeLength)
-            End If
-            If MutationMethod.HasFlag(MutationMethods.RandomResetting) Then
+            ElseIf MutationMethod.HasFlag(MutationMethods.RandomResetting) Then
                 RandomResettingMutation(SelectedChromosome, MutationRangeLength)
-            End If
-            If MutationMethod.HasFlag(MutationMethods.Scramble) Then
+            ElseIf MutationMethod.HasFlag(MutationMethods.Scramble) Then
                 ScrambleMutation(SelectedChromosome, MutationRangeLength)
-            End If
-            If MutationMethod.HasFlag(MutationMethods.Swap) Then
+            ElseIf MutationMethod.HasFlag(MutationMethods.Swap) Then
                 SwapMutation(SelectedChromosome, MutationRangeLength)
             End If
         Next

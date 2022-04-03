@@ -24,7 +24,7 @@ Module Program
     End Sub
 
     Public Sub TestGA()
-        Dim gaSolver As New GA(8, 0, 8) With {
+        Dim gaSolver As New GA(10, 0, 10) With {
             .FitnessFunction = Function(ch)
                                    Dim CurQueen As Integer
                                    Dim TestQueen As Integer
@@ -43,13 +43,19 @@ Module Program
             .EndFunction = Function(ch, geneCount)
                                Return ch.Fitness = 0
                            End Function,
-            .CrossOverMethod = CrossOverMethods.Uniform
+            .CrossOverMethod = CrossOverMethods.Uniform,
+            .MutationMethod = MutationMethods.RandomResetting Or MutationMethods.Scramble,
+            .MutationRangeLength = 3,
+            .MutationRate = 0.05,
+            .PopulationCount = 100
         }
 
         AddHandler gaSolver.GenerationProduced, Sub()
-                                                    Console.WriteLine($"{gaSolver.BestGenerations.Last().Fitness}:")
-                                                    Console.CursorLeft = 0
-                                                    Console.CursorTop = 1
+
+                                                    Console.SetCursorPosition(0, 0)
+                                                    Console.Write(New String(" ", Console.WindowWidth))
+                                                    Console.SetCursorPosition(0, 0)
+                                                    Console.WriteLine($"Generation:{gaSolver.BestGenerations.Count} Fittnes:{gaSolver.BestGenerations.Last().Fitness}")
                                                     Dim best = gaSolver.BestGenerations.Last()
                                                     For i = 0 To gaSolver.MaxGeneValue - 1
                                                         For j = 0 To gaSolver.MaxGeneValue - 1
