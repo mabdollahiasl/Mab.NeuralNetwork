@@ -10,8 +10,6 @@
 
     Public Property MutationRate As Double = 0.02
 
-    Public Property CrossOverMethod As CrossOverMethods
-    Public Property MutationMethod As MutationMethods
     Public Property MutationRangeLength As Integer
 
     Public Property MaxGenration As Integer
@@ -26,7 +24,8 @@
     Public Event GenerationProduced As EventHandler
 
     Public Property FittnessGoal As Double
-
+    Public ReadOnly Property CrossOverMethods As List(Of ICrossOver)
+    Public ReadOnly Property MutationMethods As List(Of IMutation)
 
     Private _Population As List(Of Chromosome)
     Public Property Population As List(Of Chromosome)
@@ -53,69 +52,16 @@
         _RandomGen = New Random()
         _Population = New List(Of Chromosome)
         _BestGenerations = New List(Of Chromosome)
-        Init()
-    End Sub
-    Protected Overridable Sub Init()
-        MutationRate = DefaultMutationRate
-        MutationMethod = MutationMethods.Scramble
-        If IsBitGene() Then
-            MutationMethod += MutationMethods.BitFlip
-            MutationMethod += MutationMethods.RandomResetting
-        End If
-        PopulationCount = DefaultPopulationCount
-        MutationRangeLength = 2 * (ChromosomeLength / 10)
-        CrossOverMethod = CrossOverMethods.SinglePoint
-    End Sub
-    Private Function IsBitGene() As Boolean
-        Return (MinGeneValue = 0 AndAlso MaxGeneValue = 1)
-    End Function
-    Protected Sub BitFilipMutation(Selected As Chromosome, GeneCount As Integer)
-        If Not IsBitGene() Then
-            Throw New Exception("Mutation method not supported!")
-        End If
-        For i = 0 To GeneCount - 1
-            Dim GeneIndex = _RandomGen.Next(ChromosomeLength)
-            If Selected.Genes(GeneIndex) = 0 Then
-                Selected.Genes(GeneIndex) = 1
-            Else
-                Selected.Genes(GeneIndex) = 0
-            End If
-        Next
-    End Sub
-    Protected Sub InversionMutation(Selected As Chromosome, RangeLength As Integer)
-        Dim MaxGeneIndex As Integer = ChromosomeLength - RangeLength
-        Dim StartIndex As Integer = _RandomGen.Next(0, MaxGeneIndex)
-
-        Dim GeneRange(RangeLength - 1) As Double
-        Array.Copy(Selected.Genes, StartIndex, GeneRange, 0, RangeLength)
-        Array.Reverse(GeneRange)
-
-        Array.Copy(GeneRange, 0, Selected.Genes, StartIndex, RangeLength)
-
+        CrossOverMethods = New List(Of ICrossOver)
+        MutationMethods = New List(Of IMutation)
 
     End Sub
 
-    Protected Sub RandomResettingMutation(Selected As Chromosome, GeneCount As Integer)
-        For i = 0 To GeneCount - 1
-            Dim GeneIndex = _RandomGen.Next(ChromosomeLength)
-            Selected.Genes(GeneIndex) = _RandomGen.Next(MinGeneValue, MaxGeneValue)
-        Next
-    End Sub
 
-    Protected Sub ScrambleMutation(Selected As Chromosome, RangeLength As Integer)
-        Dim MaxGeneIndex As Integer = ChromosomeLength - RangeLength
-        Dim StartIndex As Integer = _RandomGen.Next(0, MaxGeneIndex)
-        Dim EndIndex As Integer = StartIndex + RangeLength
 
-        For i = 0 To RangeLength - 1 'scramble the range
-            Dim FirstGeneIndex = _RandomGen.Next(StartIndex, EndIndex + 1)
-            Dim SecoundGeneIndex = _RandomGen.Next(StartIndex, EndIndex + 1)
 
-            Dim Temp = Selected.Genes(FirstGeneIndex)
-            Selected.Genes(FirstGeneIndex) = Selected.Genes(SecoundGeneIndex)
-            Selected.Genes(SecoundGeneIndex) = Temp
-        Next
-    End Sub
+
+
     Protected Sub SwapMutation(Selected As Chromosome, GeneCount As Integer)
         For i = 0 To GeneCount - 1 'swap the range
             Dim FirstGeneIndex = _RandomGen.Next(ChromosomeLength)
@@ -189,94 +135,18 @@
             RaiseEvent GenerationProduced(Me, Nothing)
         Loop Until EndFunction(Population.First(), RepeatCount)
     End Sub
-    Protected Function SinglePointCrossOver(Father As Chromosome, Mother As Chromosome) As Chromosome()
-        Dim Male As New Chromosome(ChromosomeLength)
-        Dim FeMale As New Chromosome(ChromosomeLength)
-
-        Dim SelectedPoint As Integer
-        SelectedPoint = _RandomGen.Next(ChromosomeLength)
-
-        For i = 0 To ChromosomeLength - 1
-            If i < SelectedPoint Then
-                Male.Genes(i) = Father.Genes(i)
-                FeMale.Genes(i) = Mother.Genes(i)
-            Else
-                FeMale.Genes(i) = Father.Genes(i)
-                Male.Genes(i) = Mother.Genes(i)
-            End If
-        Next
-        Return New Chromosome() {FeMale, Male}
-    End Function
-
-    Protected Function TwoPointCrossOver(Father As Chromosome, Mother As Chromosome) As Chromosome()
-        Dim Male As New Chromosome(ChromosomeLength)
-        Dim FeMale As New Chromosome(ChromosomeLength)
-
-        Dim SelectedPoint1, SelectedPoint2 As Integer
-        SelectedPoint1 = _RandomGen.Next(ChromosomeLength)
-        SelectedPoint2 = _RandomGen.Next(ChromosomeLength)
-
-        Dim MinPoint = Math.Min(SelectedPoint1, SelectedPoint2)
-        Dim MaxPoint = Math.Min(SelectedPoint1, SelectedPoint2)
-
-
-        For i = 0 To ChromosomeLength - 1
-            If i > MinPoint AndAlso i < MaxPoint Then
-                FeMale.Genes(i) = Father.Genes(i)
-                Male.Genes(i) = Mother.Genes(i)
-            Else
-                Male.Genes(i) = Father.Genes(i)
-                FeMale.Genes(i) = Mother.Genes(i)
-            End If
-        Next
-        Return New Chromosome() {Male, FeMale}
-    End Function
-
-    Protected Function UniformCrossOver(Father As Chromosome, Mother As Chromosome) As Chromosome()
-        Dim Male As New Chromosome(ChromosomeLength)
-        Dim FeMale As New Chromosome(ChromosomeLength)
-
-        For i As Integer = 0 To ChromosomeLength - 1
-            Dim Coin = _RandomGen.NextDouble()
-            If Coin < 0.5 Then
-                FeMale.Genes(i) = Father.Genes(i)
-                Male.Genes(i) = Mother.Genes(i)
-            Else
-                Male.Genes(i) = Father.Genes(i)
-                FeMale.Genes(i) = Mother.Genes(i)
-            End If
-        Next
-        Return New Chromosome() {Male, FeMale}
-    End Function
-
     Protected Function DoCrossOver(ch1 As Chromosome, ch2 As Chromosome) As Chromosome()
-        Select Case Me.CrossOverMethod
-            Case CrossOverMethods.SinglePoint
-                Return SinglePointCrossOver(ch1, ch2)
-            Case CrossOverMethods.TwoPoint
-                Return TwoPointCrossOver(ch1, ch2)
-            Case CrossOverMethods.Uniform
-                Return UniformCrossOver(ch1, ch2)
-            Case Else
-                Return SinglePointCrossOver(ch1, ch2)
-        End Select
+        Dim SelectedMethodIndex = _RandomGen.Next(CrossOverMethods.Count)
+        Return CrossOverMethods(SelectedMethodIndex).DoCrossOver(ch1, ch2, _RandomGen)
     End Function
+
     Protected Sub DoMutation()
         Dim MutationCount As Integer = Population.Count * MutationRate
         Dim MutationIndex = GenerateUniqeRandomArrayOfIntegers(MutationCount, PopulationCount)
         For Each index In MutationIndex
             Dim SelectedChromosome = Population(index)
-            If MutationMethod.HasFlag(MutationMethods.BitFlip) Then
-                BitFilipMutation(SelectedChromosome, MutationRangeLength)
-            ElseIf MutationMethod.HasFlag(MutationMethods.Inversion) Then
-                InversionMutation(SelectedChromosome, MutationRangeLength)
-            ElseIf MutationMethod.HasFlag(MutationMethods.RandomResetting) Then
-                RandomResettingMutation(SelectedChromosome, MutationRangeLength)
-            ElseIf MutationMethod.HasFlag(MutationMethods.Scramble) Then
-                ScrambleMutation(SelectedChromosome, MutationRangeLength)
-            ElseIf MutationMethod.HasFlag(MutationMethods.Swap) Then
-                SwapMutation(SelectedChromosome, MutationRangeLength)
-            End If
+            Dim SelectedMethodIndex = _RandomGen.Next(MutationMethods.Count)
+            MutationMethods(SelectedMethodIndex).DoMutation(SelectedChromosome, MutationRangeLength, MinGeneValue, MaxGeneValue, _RandomGen)
         Next
     End Sub
     Protected Sub MakeGenarationPool()

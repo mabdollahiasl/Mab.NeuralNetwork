@@ -24,7 +24,7 @@ Module Program
     End Sub
 
     Public Sub TestGA()
-        Dim gaSolver As New GA(10, 0, 10) With {
+        Dim gaSolver As New GA(16, 0, 16) With {
             .FitnessFunction = Function(ch)
                                    Dim CurQueen As Integer
                                    Dim TestQueen As Integer
@@ -43,15 +43,17 @@ Module Program
             .EndFunction = Function(ch, geneCount)
                                Return ch.Fitness = 0
                            End Function,
-            .CrossOverMethod = CrossOverMethods.Uniform,
-            .MutationMethod = MutationMethods.RandomResetting Or MutationMethods.Scramble,
             .MutationRangeLength = 3,
             .MutationRate = 0.05,
             .PopulationCount = 100
         }
+        gaSolver.MutationMethods.Add(New RandomResettingMutation())
+
+        gaSolver.CrossOverMethods.Add(New TwoPointCrossOver())
+        gaSolver.CrossOverMethods.Add(New UniformCrossOver())
 
         AddHandler gaSolver.GenerationProduced, Sub()
-
+                                                    Console.CursorVisible = False
                                                     Console.SetCursorPosition(0, 0)
                                                     Console.Write(New String(" ", Console.WindowWidth))
                                                     Console.SetCursorPosition(0, 0)
